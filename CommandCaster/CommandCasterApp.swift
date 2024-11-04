@@ -10,6 +10,7 @@ import SwiftData
 
 @main
 struct CommandCasterApp: App {
+    
     var body: some Scene {
         WindowGroup {
             ContentView()

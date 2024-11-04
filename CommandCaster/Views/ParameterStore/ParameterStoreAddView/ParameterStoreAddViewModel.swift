@@ -30,25 +30,37 @@ class ParameterStoreAddViewModel: ObservableObject {
         self.initialSelectedPath = selectedPath
     }
     
-    func add() async -> (success: Bool, errorMessage: String) {
+    func add(completion: @escaping (Bool, String) -> Void) async {
         if !isValid() {
-            return (false, "")
+            completion(false, "")
+            return
         }
         
-        guard let selectedPath = selectedPath else { return (false, "No path selected.") }
+        guard let selectedPath = selectedPath else {
+            completion(false, "No path selected.")
+            return
+        }
         
         if initialSelectedPath != selectedPath {
-            parameters = await dataSource.fetchParameterStoreVariables(for: selectedPath.path)
+            do {
+                parameters = try await dataSource.fetchParameterStoreVariables(for: selectedPath.path)
+            } catch {
+                completion(false, "Failed to fetch parameters: \(error.localizedDescription)")
+            }
         }
         
-        guard let parameters = parameters else { return (false, "Error fetching parameters.") }
+        guard let parameters = parameters else {
+            completion(false, "Error fetching parameters.")
+            return
+        }
         
         if parameters.contains(where: { $0.name == name }) {
-            return (false, "\(selectedPath.name) already has a variable with this name.")
+            completion(false, "\(selectedPath.name) already has a variable with this name.")
+            return
         }
         
         await dataSource.addParameterStoreVariable(with: name, to: selectedPath.path, and: value)
-        return (true, "")
+        completion(true, "")
     }
     
     func isEmpty() -> Bool {

@@ -114,14 +114,15 @@ struct ParameterStoreAddView: View {
     
     private func addPushed() async {
         viewModel.loading = true
-        let (success, error) = await viewModel.add()
-        if success {
+        await viewModel.add() { success, errorMessage in
+            if !success {
+                error = errorMessage
+                showErrorAlert = true
+                return
+            }
+            
             dismiss()
-            return
         }
-        self.error = error
-        showErrorAlert = true
-        viewModel.loading = false
     }
 }
 

@@ -21,10 +21,13 @@ struct ParameterStoreListView: View {
     @State private var showDeleteParameterStorePath = false
     @State private var selectedPathForEditOrDelete: ParameterStorePath?
     @State private var showAddParameter = false
+    @State private var showAddProfile = false
     @State private var columnsCount: Int = 1
     @State private var headerHeight: CGFloat = 30
     @State private var maxHeaderHeight: CGFloat = 30
     @State private var minHeaderHeight: CGFloat = 30
+    @State var showErrorAlert = false
+    @State var error = ""
     
     
     var body: some View {
@@ -44,6 +47,11 @@ struct ParameterStoreListView: View {
                 updateHeaderHeight(to: minHeaderHeight * 2.5)
             }
         }
+        .alert("Error", isPresented: $showErrorAlert) {
+            Button("Ok", role: .cancel) {}
+        } message: {
+            Text(error)
+        }
         .sheet(isPresented: $showAddParameterStorePath, onDismiss: {
             viewModel.fetchPaths()
         }) {
@@ -52,7 +60,7 @@ struct ParameterStoreListView: View {
         }
         .sheet(isPresented: $showAddParameter, onDismiss: {
             if let selectedPath = viewModel.selectedPath {
-                viewModel.fetchParameters(for: selectedPath)
+                fetchParameters(for: selectedPath)
             }
         }) {
             ParameterStoreAddView(paths: viewModel.paths, selectedPath: viewModel.selectedPath, parameters: viewModel.parameters)
@@ -66,6 +74,24 @@ struct ParameterStoreListView: View {
                     .presentationBackgroundInteraction(.disabled)
             }
         }
+    }
+    
+    @ToolbarContentBuilder
+    private var Toolbar: some ToolbarContent {
+        ToolbarItemGroup(content: {
+            
+            Menu("Add", systemImage: "plus", content: {
+                Button("Add path", action: {
+                    showAddParameterStorePath = true
+                })
+                
+                if (viewModel.paths.count > 0) {
+                    Button("Add variable", action: {
+                        showAddParameter = true
+                    })
+                }
+            })
+        })
     }
         
     @ViewBuilder
@@ -96,9 +122,8 @@ struct ParameterStoreListView: View {
     private func HeaderCell(path: ParameterStorePath) -> some View {
         ZStack {
             Button(action: {
-                viewModel.searchText = ""
                 viewModel.selectedPath = path
-                viewModel.fetchParameters(for: path)
+                fetchParameters(for: path)
             }, label: {
                 Text(path.name)
                     .lineLimit(1)
@@ -181,25 +206,22 @@ struct ParameterStoreListView: View {
         .frame(maxHeight: geometry.size.height - headerHeight - dividerHeight)
     }
     
-    @ToolbarContentBuilder
-    private var Toolbar: some ToolbarContent {
-        ToolbarItemGroup(content: {
-            Menu {
-                Button("Add path", action: {showAddParameterStorePath = true})
-                Button("Add variable", action: {showAddParameter = true})
-            } label: {
-                Image(systemName: "plus")
-            }
-        })
-    }
-    
-    
     @ViewBuilder
     private func ParameterCell(_ parameter: ParameterStoreVariable) -> some View {
         Text(parameter.name)
             .font(.title3)
             .fontWeight(.semibold)
             .padding(.vertical, 5)
+    }
+    
+    private func fetchParameters(for path: ParameterStorePath) {
+        viewModel.searchText = ""
+        viewModel.fetchParameters(for: path) { success, errorMessage in
+            if !success {
+                error = errorMessage
+                showErrorAlert = true
+            }
+        }
     }
     
     private func updateHeaderHeight(to newHeaderHeight: CGFloat? = nil) {

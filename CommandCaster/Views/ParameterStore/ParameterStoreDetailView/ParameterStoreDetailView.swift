@@ -43,6 +43,9 @@ struct ParameterStoreDetailView: View {
             }
         }
         .toolbar(removing: .title)
+        .onChange(of: viewModel.parameter) {
+            editMode = false
+        }
     }
     
     @ToolbarContentBuilder
@@ -183,6 +186,7 @@ struct ParameterStoreDetailView: View {
         await viewModel.deleteParameter()
         postDeleteAction()
         viewModel.loading = false
+        editMode = false
         dismiss()
     }
 }

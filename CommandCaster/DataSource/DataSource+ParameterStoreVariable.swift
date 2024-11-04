@@ -6,34 +6,31 @@
 //
 
 import AWSSSM
+import AWSClientRuntime
 
 extension DataSource {
     
-    func fetchParameterStoreVariables(for path: String) async -> [ParameterStoreVariable] {
+    func fetchParameterStoreVariables(for path: String) async throws -> [ParameterStoreVariable] {
         var allParameters: [ParameterStoreVariable] = []
         var nextToken: String? = nil
         
-        do {
-            let client = try await SSMClient()
+        let client = try await SSMClient()
 
-            repeat {
-                let input = GetParametersByPathInput(
-                    nextToken: nextToken,
-                    path: path,
-                    withDecryption: true
-                )
-                
-                let result = try await client.getParametersByPath(input: input)
-                
-                let mappedParameters = result.parameters?.compactMap { ParameterStoreVariable.from(ssmParameter: $0) } ?? []
-                allParameters.append(contentsOf: mappedParameters)
-                
-                nextToken = result.nextToken
-            } while nextToken != nil && !Task.isCancelled
-            return allParameters
-        } catch {
-            fatalError("Error fetching parameter: \(error)")
-        }
+        repeat {
+            let input = GetParametersByPathInput(
+                nextToken: nextToken,
+                path: path,
+                withDecryption: true
+            )
+            
+            let result = try await client.getParametersByPath(input: input)
+            
+            let mappedParameters = result.parameters?.compactMap { ParameterStoreVariable.from(ssmParameter: $0) } ?? []
+            allParameters.append(contentsOf: mappedParameters)
+            
+            nextToken = result.nextToken
+        } while nextToken != nil && !Task.isCancelled
+        return allParameters
     }
     
     func addParameterStoreVariable(with name: String, to path: String, and value: String) async {

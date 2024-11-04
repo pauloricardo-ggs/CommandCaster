@@ -35,17 +35,27 @@ class ParameterStoreListViewModel: ObservableObject {
         paths = dataSource.fetchParameterStorePaths()
     }
     
-    func fetchParameters(for path: ParameterStorePath?) {
-        guard let path = path else { return }
+    func fetchParameters(for path: ParameterStorePath?, completion: @escaping (Bool, String) -> Void) {
+        guard let path = path else {
+            completion(false, "No path selected.")
+            return
+        }
+        
         cancelFetch()
         selectedPath = path
         loading = true
         task = Task {
-            let unorderedParameters = await dataSource.fetchParameterStoreVariables(for: path.path)
-            guard !Task.isCancelled else { return }
-            self.parameters = unorderedParameters.sorted { $0.name < $1.name }
-            filterParameters()
-            loading = false
+            do {
+                let unorderedParameters = try await dataSource.fetchParameterStoreVariables(for: path.path)
+                guard !Task.isCancelled else { return }
+                self.parameters = unorderedParameters.sorted { $0.name < $1.name }
+                filterParameters()
+                loading = false
+                completion(true, "")
+            } catch {
+                loading = false
+                completion(false, "Failed to fetch parameters: \(error.localizedDescription)")
+            }
         }
     }
     
