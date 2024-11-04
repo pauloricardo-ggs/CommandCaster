@@ -4,7 +4,7 @@ CommandCaster is a macOS application for developers that simplifies the manageme
 
 ## Why Does the Application Need to Bypass Gatekeeper?
 
-As an initial, experimental project, this app has not been signed through the **Apple Developer Program** (which costs $99 annually). On macOS, any unsigned application is blocked by Gatekeeper to ensure system security. To run CommandCaster, you will need to bypass this block manually, allowing macOS to open the app from an unidentified developer.
+As an initial, experimental project, this app has not been notarized through the **Apple Developer Program** (which costs $99 annually). On macOS, any unnotarized application is blocked by Gatekeeper to ensure system security. To run CommandCaster, you will need to bypass this block manually, allowing macOS to open the app from an unidentified developer.
 
 ## Instructions to Open CommandCaster on macOS
 
@@ -53,8 +53,8 @@ After configuration, the structure of the `~/.aws` folder should look like this:
 
 ```
 ~/.aws/
-├── config         # Define a região
-└── credentials    # Contém as chaves de acesso
+├── config         # Define the region
+└── credentials    # Contains the access keys
 ```
 
 ### Important Notes
