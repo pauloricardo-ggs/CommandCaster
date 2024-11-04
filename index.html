@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CommandCaster</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+    <img src="AppIcon.png" alt="CommandCaster Logo" class="app-logo">
+    <h1>CommandCaster</h1>
+</header>
+
+<main>
+    <section id="overview">
+        <h2>Overview</h2>
+        <p>CommandCaster is a macOS application for developers that simplifies the management of variables in the <strong>AWS Parameter Store</strong>. This project was created as a learning tool while I'm honing my skills in Swift. Future updates will introduce new features and optimizations to enhance the user experience and expand the application's capabilities.</p>
+    </section>
+
+    <section id="download">
+        <h2>Download</h2>
+        <p>Get the latest version of CommandCaster from GitHub:</p>
+        <a id="download-button" class="download-button" target="_blank">Download Latest Version</a>
+    </section>
+
+    <section id="gatekeeper">
+        <h2>Gatekeeper</h2>
+    
+        <h3>Why Does the Application Need to Bypass Gatekeeper?</h3>
+        <p>As an initial, experimental project, this app has not been notarized through the <strong>Apple Developer Program</strong> (which costs $99 annually). On macOS, any unnotarized application is blocked by Gatekeeper to ensure system security. To run CommandCaster, you will need to bypass this block manually, allowing macOS to open the app from an unidentified developer.</p>
+    
+        <h3>Instructions to Open CommandCaster on macOS</h3>
+        <p>After downloading and moving the application to the <strong>Applications</strong> folder, run the command below in the terminal to remove the Gatekeeper block:</p>
+        <pre><code>xattr -d com.apple.quarantine "/Applications/CommandCaster.app"</code></pre>
+    
+        <p><strong>Note:</strong> This process only needs to be done once. After the first launch, macOS will mark the app as safe, allowing you to open it directly in the future.</p>
+    </section>
+
+    <section id="aws-credentials">
+        <h2>AWS Credentials Configuration</h2>
+        <p>CommandCaster uses the **AWS SDK** to access the AWS Parameter Store. This SDK requires access credentials configured as environment variables, which must be specified in the AWS <code>credentials</code> and <code>config</code> files.</p>
+
+        <h3>How to Set Up Access</h3>
+        <ol>
+            <li><strong>Create the Configuration Folder and Files</strong>:
+                In your home directory, navigate to the <code>.aws</code> folder. If it doesn’t exist, you can create it by running:
+                <pre><code>mkdir -p ~/.aws</code></pre>
+            </li>
+            <li><strong>Configure the Credentials File</strong>:
+                In the <code>~/.aws</code> directory, create or edit the <code>credentials</code> file to add the access keys (access key and secret key) for your AWS account.
+                <pre><code>[default]
+aws_access_key_id = YOUR_ACCESS_KEY
+aws_secret_access_key = YOUR_SECRET_KEY</code></pre>
+            </li>
+            <li><strong>Configure the Config File</strong>:
+                In the same <code>~/.aws</code> directory, create or edit the <code>config</code> file to set the default region that CommandCaster will use to access the Parameter Store.
+                <pre><code>[default]
+region = us-east-1</code></pre>
+                Replace <code>us-east-1</code> with the region where your AWS Parameter Store variables are stored.
+            </li>
+        </ol>
+
+        <h3>Complete Example</h3>
+        <p>After configuration, the structure of the <code>~/.aws</code> folder should look like this:</p>
+        <pre><code>~/.aws/
+├── config         # Define the region
+└── credentials    # Contains the access keys</code></pre>
+
+        <h3>Important Notes</h3>
+        <ul>
+            <li><strong>Profile Switching</strong>: If you want to use different AWS profiles, you can set up additional sections in the <code>credentials</code> and <code>config</code> files, such as <code>[profile1]</code>, <code>[profile2]</code>.</li>
+            <li><strong>Note</strong>: Currently, CommandCaster only uses the <code>default</code> profile. Profile management will be added in a future update, allowing you to select custom profiles directly within the app.</li>
+        </ul>
+    </section>
+
+    <section id="features">
+        <h2>Features</h2>
+        <ul>
+            <li><strong>Variable Management</strong>: View, edit, and organize variables stored in the AWS Parameter Store.</li>
+        </ul>
+
+        <h3>Upcoming Features</h3>
+        <ul>
+            <li><strong>Docker Compose Container Management</strong>: In a future update, CommandCaster will include support for managing containers using Docker Compose. This feature will facilitate running containers for projects with multiple services and databases across different environments (local, dev, hg). This functionality will be especially useful for developers needing a simplified way to run databases and services for testing in various contexts.</li>
+        </ul>
+    </section>
+
+    <section id="contact">
+        <h2>Contact</h2>
+        <p>If you have any questions or suggestions, please reach out via email at: <a href="mailto:contact@paulosilva.dev">contact@paulosilva.dev</a></p>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2024 CommandCaster. Licensed under the <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GPL-3.0 License</a>.</p>
+</footer>
+
+<script src="download.js"></script>
+</body>
+</html>
