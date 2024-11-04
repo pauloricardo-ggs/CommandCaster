@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>LatestReleaseUrl</key>
+	<string>https://api.github.com/repos/pauloricardo-ggs/CommandCaster/releases/latest</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict/>
