@@ -102,7 +102,6 @@ struct ParameterStoreDetailView: View {
                 VStack(alignment: .leading) {
                     Text(viewModel.parameter.name)
                         .font(.title)
-                        .frame(height: 20)
                     
                     Text("Last modified \(viewModel.parameter.lastModifiedDate)")
                         .font(.caption)
