@@ -2,19 +2,6 @@
 
 CommandCaster is a macOS application for developers that simplifies the management of variables in the **AWS Parameter Store**. This project was created as a learning tool while I'm honing my skills in Swift. Future updates will introduce new features and optimizations to enhance the user experience and expand the application's capabilities.
 
-## Why Does the Application Need to Bypass Gatekeeper?
-
-As an initial, experimental project, this app has not been notarized through the **Apple Developer Program** (which costs $99 annually). On macOS, any unnotarized application is blocked by Gatekeeper to ensure system security. To run CommandCaster, you will need to bypass this block manually, allowing macOS to open the app from an unidentified developer.
-
-## Instructions to Open CommandCaster on macOS
-
-After downloading and moving the application to the **Applications** folder, run the command below in the terminal to remove the Gatekeeper block:
-   ```bash
-   xattr -d com.apple.quarantine "/Applications/CommandCaster.app"
-   ```
-
-> **Note**: This process only needs to be done once. After the first launch, macOS will mark the app as safe, allowing you to open it directly in the future.
-
 ## AWS Credentials Configuration
 
 CommandCaster uses the **AWS SDK** to access the AWS Parameter Store. This SDK requires access credentials configured as environment variables, which must be specified in the AWS `credentials` and `config` files.
@@ -71,4 +58,4 @@ After configuration, the structure of the `~/.aws` folder should look like this:
 
 ## Contact
 
-For questions or suggestions, please reach out via email at: [contact@paulosilva.dev](mailto:contact@paulosilva.dev)
+For questions or suggestions, please reach out via email at: [contact@pauloricardo.dev](mailto:contact@pauloricardo.dev)
