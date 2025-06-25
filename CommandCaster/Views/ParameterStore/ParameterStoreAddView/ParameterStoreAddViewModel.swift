@@ -43,9 +43,11 @@ class ParameterStoreAddViewModel: ObservableObject {
         
         if initialSelectedPath != selectedPath {
             do {
-                parameters = try await dataSource.fetchParameterStoreVariables(for: selectedPath.path)
+                let result = try await dataSource.fetchParameterStoreVariables(for: selectedPath.path)
+                parameters = result.variables
             } catch {
                 completion(false, "Failed to fetch parameters: \(error.localizedDescription)")
+                return
             }
         }
         
@@ -59,7 +61,13 @@ class ParameterStoreAddViewModel: ObservableObject {
             return
         }
         
-        await dataSource.addParameterStoreVariable(with: name, to: selectedPath.path, and: value)
+        do {
+            try await dataSource.addParameterStoreVariable(with: name, to: selectedPath.path, and: value)
+        } catch {
+            completion(false, "Failed to add parameter: \(error.localizedDescription)")
+            return
+        }
+        
         completion(true, "")
     }
     

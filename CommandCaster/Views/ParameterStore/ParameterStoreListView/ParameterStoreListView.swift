@@ -29,7 +29,6 @@ struct ParameterStoreListView: View {
     @State var showErrorAlert = false
     @State var error = ""
     
-    
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: .zero) {
@@ -91,6 +90,15 @@ struct ParameterStoreListView: View {
                     })
                 }
             })
+            
+            Button(action: {
+                if let selectedPath = viewModel.selectedPath {
+                    fetchParameters(for: selectedPath)
+                }
+            }) {
+                Label("Refresh", systemImage: "arrow.clockwise")
+            }
+            .disabled(viewModel.selectedPath == nil || viewModel.loading)
         })
     }
         
@@ -183,23 +191,19 @@ struct ParameterStoreListView: View {
         
         Divider()
         
-        VStack {
-            if (viewModel.loading) {
-                ProgressView("Loading...")
-                    .progressViewStyle(.automatic)
-                    .padding()
-            } else {
-                List(viewModel.filteredParameters, selection: $viewModel.selectedParameter) { parameter in
-                    NavigationLink(
-                        destination: ParameterStoreDetailView(for: parameter, postDeleteAction: { viewModel.delete(parameter) }),
-                        label: { ParameterCell(parameter) }
-                    )
-                }
-                .toolbar { Toolbar }
-            }
+        if viewModel.loading {
+            LoadingIndicator()
         }
+        
+        List(viewModel.filteredParameters, selection: $viewModel.selectedParameter) { parameter in
+            NavigationLink(
+                destination: ParameterStoreDetailView(for: parameter, postDeleteAction: { viewModel.delete(parameter) }),
+                label: { ParameterCell(parameter) }
+            )
+        }
+        .toolbar { Toolbar }
         .navigationTitle(viewModel.selectedPath == nil ? "Parameter Store" : "\(viewModel.selectedPath!.name) - \(viewModel.selectedPath!.path)")
-        .navigationSubtitle(viewModel.selectedPath == nil || viewModel.loading ? " " : "\(viewModel.parameters.count) variables")
+        .navigationSubtitle(viewModel.selectedPath == nil ? " " : "\(viewModel.parameters.count) variables")
         .onDisappear {
             viewModel.cancelFetch()
         }

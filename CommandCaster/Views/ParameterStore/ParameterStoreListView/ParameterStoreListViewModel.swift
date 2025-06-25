@@ -43,13 +43,19 @@ class ParameterStoreListViewModel: ObservableObject {
         
         cancelFetch()
         selectedPath = path
+        parameters = []
         loading = true
         task = Task {
+            var nextToken: String? = nil
             do {
-                let unorderedParameters = try await dataSource.fetchParameterStoreVariables(for: path.path)
-                guard !Task.isCancelled else { return }
-                self.parameters = unorderedParameters.sorted { $0.name < $1.name }
-                filterParameters()
+                repeat {
+                    let result = try await dataSource.fetchParameterStoreVariables(for: path.path, nextToken: nextToken)
+                    guard !Task.isCancelled else { return }
+                    parameters.append(contentsOf: result.variables)
+                    parameters.sort { $0.name < $1.name }
+                    filterParameters()
+                    nextToken = result.nextToken
+                } while nextToken != nil
                 loading = false
                 completion(true, "")
             } catch {

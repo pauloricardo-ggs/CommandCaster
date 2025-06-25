@@ -12,14 +12,14 @@ struct ParameterStoreAddView: View {
     
     @Environment(\.dismiss) var dismiss
     
-    @ObservedObject var viewModel: ParameterStoreAddViewModel
+    @StateObject var viewModel: ParameterStoreAddViewModel
     
     @State var showCancelAlert = false
     @State var showErrorAlert = false
     @State var error = ""
     
     init(paths: [ParameterStorePath], selectedPath: ParameterStorePath?, parameters: [ParameterStoreVariable]?) {
-        _viewModel = ObservedObject(initialValue: ParameterStoreAddViewModel(dataSource: .shared, paths: paths, selectedPath: selectedPath, parameters: parameters))
+        _viewModel = StateObject(wrappedValue: ParameterStoreAddViewModel(dataSource: .shared, paths: paths, selectedPath: selectedPath, parameters: parameters))
     }
     
     var body: some View {
@@ -113,7 +113,10 @@ struct ParameterStoreAddView: View {
     }
     
     private func addPushed() async {
+        guard !viewModel.loading else { return }
         viewModel.loading = true
+        defer { viewModel.loading = false }
+        
         await viewModel.add() { success, errorMessage in
             if !success {
                 error = errorMessage

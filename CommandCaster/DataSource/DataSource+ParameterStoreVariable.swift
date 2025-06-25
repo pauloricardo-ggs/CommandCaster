@@ -10,44 +10,29 @@ import AWSClientRuntime
 
 extension DataSource {
     
-    func fetchParameterStoreVariables(for path: String) async throws -> [ParameterStoreVariable] {
-        var allParameters: [ParameterStoreVariable] = []
-        var nextToken: String? = nil
-        
+    func fetchParameterStoreVariables(for path: String, nextToken: String? = nil) async throws -> (variables: [ParameterStoreVariable], nextToken: String?) {
         let client = try await SSMClient()
-
-        repeat {
-            let input = GetParametersByPathInput(
-                nextToken: nextToken,
-                path: path,
-                withDecryption: true
-            )
-            
-            let result = try await client.getParametersByPath(input: input)
-            
-            let mappedParameters = result.parameters?.compactMap { ParameterStoreVariable.from(ssmParameter: $0) } ?? []
-            allParameters.append(contentsOf: mappedParameters)
-            
-            nextToken = result.nextToken
-        } while nextToken != nil && !Task.isCancelled
-        return allParameters
+        let input = GetParametersByPathInput(
+            nextToken: nextToken,
+            path: path,
+            withDecryption: true
+        )
+        let result = try await client.getParametersByPath(input: input)
+        let mapped = result.parameters?.compactMap { ParameterStoreVariable.from(ssmParameter: $0) } ?? []
+        return (mapped, result.nextToken)
     }
     
-    func addParameterStoreVariable(with name: String, to path: String, and value: String) async {
-        do {
-            let client = try await SSMClient()
-            
-            let input = PutParameterInput(
-                name: path + name,
-                overwrite: false,
-                type: .string,
-                value: value
-            )
-            
-            _ = try await client.putParameter(input: input)
-        } catch {
-            fatalError("Error adding parameter store variable: \(error)")
-        }
+    func addParameterStoreVariable(with name: String, to path: String, and value: String) async throws {
+        let client = try await SSMClient()
+        
+        let input = PutParameterInput(
+            name: path + name,
+            overwrite: false,
+            type: .string,
+            value: value
+        )
+        
+        _ = try await client.putParameter(input: input)
     }
     
     func updateParameterStoreVariableValue(_ parameter: ParameterStoreVariable, to newValue: String) async -> Int {
