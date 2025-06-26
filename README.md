@@ -52,10 +52,6 @@ After configuration, the structure of the `~/.aws` folder should look like this:
 
 - **Variable Management**: View, edit, and organize variables stored in the AWS Parameter Store.
 
-### Upcoming Features
-
-- **Docker Compose Container Management**: In a future update, CommandCaster will include support for managing containers using Docker Compose. This feature will facilitate running containers for projects with multiple services and databases across different environments (local, dev, hg). This functionality will be especially useful for developers needing a simplified way to run databases and services for testing in various contexts.
-
 ## Contact
 
 For questions or suggestions, please reach out via email at: [contact@pauloricardo.dev](mailto:contact@pauloricardo.dev)
