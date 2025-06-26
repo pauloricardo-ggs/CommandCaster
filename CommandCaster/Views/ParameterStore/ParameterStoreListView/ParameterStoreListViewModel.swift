@@ -83,6 +83,6 @@ class ParameterStoreListViewModel: ObservableObject {
     }
     
     func delete(_ parameter: ParameterStoreVariable) {
-        parameters.removeAll(where: { $0.id == parameter.id })
+        filteredParameters.removeAll(where: { $0.id == parameter.id })
     }
 }
