@@ -57,12 +57,12 @@ struct ParameterStoreListView: View {
             ParameterStorePathAddView(paths: viewModel.paths)
                 .presentationBackgroundInteraction(.disabled)
         }
-        .sheet(isPresented: $showAddParameter, onDismiss: {
-            if let selectedPath = viewModel.selectedPath {
-                fetchParameters(for: selectedPath)
+        .sheet(isPresented: $showAddParameter) {
+            ParameterStoreAddView(paths: viewModel.paths, selectedPath: viewModel.selectedPath, parameters: viewModel.parameters) {
+                if let selectedPath = viewModel.selectedPath {
+                    fetchParameters(for: selectedPath)
+                }
             }
-        }) {
-            ParameterStoreAddView(paths: viewModel.paths, selectedPath: viewModel.selectedPath, parameters: viewModel.parameters)
                 .presentationBackgroundInteraction(.disabled)
         }
         .sheet(isPresented: $showEditParameterStorePath, onDismiss: {

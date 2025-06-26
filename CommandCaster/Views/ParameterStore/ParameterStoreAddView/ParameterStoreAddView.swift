@@ -18,8 +18,11 @@ struct ParameterStoreAddView: View {
     @State var showErrorAlert = false
     @State var error = ""
     
-    init(paths: [ParameterStorePath], selectedPath: ParameterStorePath?, parameters: [ParameterStoreVariable]?) {
+    var onAdd: () -> Void
+    
+    init(paths: [ParameterStorePath], selectedPath: ParameterStorePath?, parameters: [ParameterStoreVariable]?, onAdd: @escaping () -> Void) {
         _viewModel = StateObject(wrappedValue: ParameterStoreAddViewModel(dataSource: .shared, paths: paths, selectedPath: selectedPath, parameters: parameters))
+        self.onAdd = onAdd
     }
     
     var body: some View {
@@ -45,21 +48,42 @@ struct ParameterStoreAddView: View {
             
             GroupBox {
                 VStack(alignment: .leading) {
-                    TextField("Name", text: $viewModel.name)
-                        .textFieldStyle(.plain)
-                        .font(.title2)
-                    
-                    Divider().opacity(0.5)
-                    
-                    HStack {
-                        Text("Value")
-                            .foregroundStyle(.gray)
-                            .padding(.trailing, 8)
-                        TextField("required", text: $viewModel.value)
-                            .multilineTextAlignment(.trailing)
-                            .textFieldStyle(.plain)
+                    ScrollView {
+                        VStack {
+                            ForEach(Array($viewModel.variables.enumerated()), id: \.element.id) { index, $variable in
+                                HStack(alignment: .top) {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        TextField("Name", text: $variable.name)
+                                            .textFieldStyle(.plain)
+                                            .font(.title3)
+
+                                        TextField("Value", text: $variable.value)
+                                            .textFieldStyle(.plain)
+                                            .font(.body)
+                                    }
+
+                                    if index > 0 {
+                                        Button(role: .destructive) {
+                                            viewModel.variables.removeAll { $0.id == variable.id }
+                                        } label: {
+                                            Image(systemName: "trash")
+                                        }
+                                        .padding(.leading, 8)
+                                    }
+                                }
+
+                                Divider().opacity(0.3)
+                            }
+                        }
                     }
-                    .padding(.vertical, 3)
+                    .frame(maxHeight: 300)
+
+                    Button(action: {
+                        viewModel.variables.append(ParameterStoreVariableInput())
+                    }) {
+                        Label("Adicionar outro", systemImage: "plus")
+                    }
+                    .padding(.top, 4)
                     
                     Divider().opacity(0.5)
                     
@@ -86,6 +110,7 @@ struct ParameterStoreAddView: View {
             }
         }
     }
+
     
     @ViewBuilder
     private var Footer: some View {
@@ -117,7 +142,9 @@ struct ParameterStoreAddView: View {
         viewModel.loading = true
         defer { viewModel.loading = false }
         
-        await viewModel.add() { success, errorMessage in
+        await viewModel.addAll { success, errorMessage in
+            onAdd()
+            
             if !success {
                 error = errorMessage
                 showErrorAlert = true
@@ -131,5 +158,5 @@ struct ParameterStoreAddView: View {
 
 #Preview {
     let paths = [ ParameterStorePath(name: "path", path: "/path/to/parameter/") ]
-    ParameterStoreAddView(paths: paths, selectedPath: paths.first, parameters: nil)
+    ParameterStoreAddView(paths: paths, selectedPath: paths.first, parameters: nil) {}
 }
