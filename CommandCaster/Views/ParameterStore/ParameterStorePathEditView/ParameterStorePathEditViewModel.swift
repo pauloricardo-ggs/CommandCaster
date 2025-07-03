@@ -6,37 +6,36 @@
 //
 
 import Foundation
-import SwiftData
-import SwiftUICore
 
+@MainActor
 class ParameterStorePathEditViewModel: ObservableObject {
 
-    private let dataSource: DataSource
+    private let dataSource = DataSource.shared
+    private let errorContext = ErrorContext.shared
     
     @Published var newName: String
     @Published var newPath: String
     @Published var selectedPath: ParameterStorePath
     @Published var paths: [ParameterStorePath]
     
-    init(dataSource: DataSource, selectedPath: ParameterStorePath, paths: [ParameterStorePath]) {
-        self.dataSource = dataSource
+    init(selectedPath: ParameterStorePath, paths: [ParameterStorePath]) {
         self.selectedPath = selectedPath
         newName = selectedPath.name
         newPath = selectedPath.path
         self.paths = paths
     }
     
-    func save() -> (success: Bool, errorMessage: String) {
+    func save() {
         if !isValid() {
-            return (false, "")
+            return
         }
         
         if paths.contains(where: { $0.name == newName }) {
-            return (false, "Already exists a parameter store path with this name.")
+            errorContext.set(.duplicatedPath)
+            return
         }
         
         selectedPath.update(name: newName, path: newPath)
-        return (true, "")
     }
     
     func changed() -> Bool {

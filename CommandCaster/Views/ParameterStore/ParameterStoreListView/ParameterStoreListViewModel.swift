@@ -12,66 +12,64 @@ import SwiftUICore
 @MainActor
 class ParameterStoreListViewModel: ObservableObject {
 
-    private let dataSource: DataSource
+    private let errorContext = ErrorContext.shared
+    private let dataSource = DataSource.shared
+    
     private var task: Task<Void, Never>?
     
-    @Published var paths: [ParameterStorePath]
+    @Published var paths: [ParameterStorePath] = []
+    @Published var variables: [ParameterStoreVariable] = []
+    @Published var filteredVariables: [ParameterStoreVariable] = []
     @Published var selectedPath: ParameterStorePath?
     @Published var loading = false
     @Published var searchText: String = ""
-    @Published var parameters: [ParameterStoreVariable]
-    @Published var filteredParameters: [ParameterStoreVariable]
     
     @State var selectedParameter: ParameterStoreVariable?
     
-    init(dataSource: DataSource) {
-        self.dataSource = dataSource
-        self.paths = []
-        self.parameters = []
-        self.filteredParameters = []
-    }
-    
     func fetchPaths() {
-        paths = dataSource.fetchParameterStorePaths()
+        do {
+            paths = try dataSource.fetchParameterStorePaths()
+        } catch {
+            errorContext.set(.failedToFetchPaths)
+        }
     }
     
-    func fetchParameters(for path: ParameterStorePath?, completion: @escaping (Bool, String) -> Void) {
+    func fetchVariables(for path: ParameterStorePath?) {
         guard let path = path else {
-            completion(false, "No path selected.")
+            errorContext.set(.noPathSelected)
             return
         }
         
         cancelFetch()
         selectedPath = path
-        parameters = []
+        variables = []
         loading = true
+        
         task = Task {
             var nextToken: String? = nil
             do {
                 repeat {
                     let result = try await dataSource.fetchParameterStoreVariables(for: path.path, nextToken: nextToken)
                     guard !Task.isCancelled else { return }
-                    parameters.append(contentsOf: result.variables)
-                    parameters.sort { $0.name < $1.name }
-                    filterParameters()
+                    variables.append(contentsOf: result.variables)
+                    variables.sort { $0.name < $1.name }
+                    filterVariables()
                     nextToken = result.nextToken
                 } while nextToken != nil
-                loading = false
-                completion(true, "")
             } catch {
-                loading = false
-                completion(false, "Failed to fetch parameters: \(error.localizedDescription)")
+                errorContext.set(.failedToFetchVariables)
             }
+            loading = false
         }
     }
     
-    func filterParameters() {
+    func filterVariables() {
         if searchText.isEmpty {
-            filteredParameters = parameters
+            filteredVariables = variables
             return
         }
         
-        filteredParameters = parameters.filter { $0.name.lowercased().contains(searchText.lowercased()) }
+        filteredVariables = variables.filter { $0.name.lowercased().contains(searchText.lowercased()) }
     }
     
     func cancelFetch() {
@@ -79,10 +77,14 @@ class ParameterStoreListViewModel: ObservableObject {
     }
     
     func delete(_ path: ParameterStorePath) {
-        dataSource.delete(path)
+        do {
+            try dataSource.delete(path)
+        } catch {
+            errorContext.set(.failedToDeleteVariable)
+        }
     }
     
-    func delete(_ parameter: ParameterStoreVariable) {
-        filteredParameters.removeAll(where: { $0.id == parameter.id })
+    func delete(_ variable: ParameterStoreVariable) {
+        filteredVariables.removeAll(where: { $0.id == variable.id })
     }
 }

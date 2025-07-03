@@ -6,34 +6,37 @@
 //
 
 import Foundation
-import SwiftData
-import SwiftUICore
 
+@MainActor
 class ParameterStorePathAddViewModel: ObservableObject {
 
-    private let dataSource: DataSource
+    private let dataSource = DataSource.shared
+    private let errorContext = ErrorContext.shared
     
     @Published var paths: [ParameterStorePath]
     @Published var name = ""
     @Published var path = ""
     @Published var loading = false
     
-    init(dataSource: DataSource, paths: [ParameterStorePath]) {
-        self.dataSource = dataSource
+    init(paths: [ParameterStorePath]) {
         self.paths = paths
     }
     
-    func add() async -> (success: Bool, errorMessage: String) {
+    func add() async {
         if !isValid() {
-            return (false, "")
+            return
         }
         
         if paths.contains(where: { $0.name == name }) {
-            return (false, "Already exists a parameter store path with this name.")
+            errorContext.set(.duplicatedPath)
+            return
         }
         
-        dataSource.add(ParameterStorePath(name: name, path: path))
-        return (true, "")
+        do {
+            try dataSource.add(ParameterStorePath(name: name, path: path))
+        } catch {
+            errorContext.set(.failedToAddPath)
+        }
     }
     
     func isEmpty() -> Bool {

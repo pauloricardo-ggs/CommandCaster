@@ -9,7 +9,7 @@ import SwiftUI
 import AWSSSM
 
 struct ParameterStoreListView: View {
-    @ObservedObject private var viewModel = ParameterStoreListViewModel(dataSource: .shared)
+    @ObservedObject private var viewModel = ParameterStoreListViewModel()
     
     private let padding: CGFloat = 8
     private let columnWidth: CGFloat = 120
@@ -26,8 +26,6 @@ struct ParameterStoreListView: View {
     @State private var headerHeight: CGFloat = 30
     @State private var maxHeaderHeight: CGFloat = 30
     @State private var minHeaderHeight: CGFloat = 30
-    @State var showErrorAlert = false
-    @State var error = ""
     
     var body: some View {
         GeometryReader { geometry in
@@ -46,11 +44,6 @@ struct ParameterStoreListView: View {
                 updateHeaderHeight(to: minHeaderHeight * 2.5)
             }
         }
-        .alert("Error", isPresented: $showErrorAlert) {
-            Button("Ok", role: .cancel) {}
-        } message: {
-            Text(error)
-        }
         .sheet(isPresented: $showAddParameterStorePath, onDismiss: {
             viewModel.fetchPaths()
         }) {
@@ -58,7 +51,7 @@ struct ParameterStoreListView: View {
                 .presentationBackgroundInteraction(.disabled)
         }
         .sheet(isPresented: $showAddParameter) {
-            ParameterStoreAddView(paths: viewModel.paths, selectedPath: viewModel.selectedPath, parameters: viewModel.parameters) {
+            ParameterStoreAddView(paths: viewModel.paths, selectedPath: viewModel.selectedPath, parameters: viewModel.variables) {
                 if let selectedPath = viewModel.selectedPath {
                     fetchParameters(for: selectedPath)
                 }
@@ -186,7 +179,7 @@ struct ParameterStoreListView: View {
         }
         .padding(8)
         .onChange(of: viewModel.searchText) {
-            viewModel.filterParameters()
+            viewModel.filterVariables()
         }
         
         Divider()
@@ -195,15 +188,15 @@ struct ParameterStoreListView: View {
             LoadingIndicator()
         }
         
-        List(viewModel.filteredParameters, selection: $viewModel.selectedParameter) { parameter in
+        List(viewModel.filteredVariables, selection: $viewModel.selectedParameter) { variable in
             NavigationLink(
-                destination: ParameterStoreDetailView(for: parameter, postDeleteAction: { viewModel.delete(parameter) }),
-                label: { ParameterCell(parameter) }
+                destination: ParameterStoreDetailView(for: variable, postDeleteAction: { viewModel.delete(variable) }),
+                label: { ParameterCell(variable) }
             )
         }
         .toolbar { Toolbar }
         .navigationTitle(viewModel.selectedPath == nil ? "Parameter Store" : "\(viewModel.selectedPath!.name) - \(viewModel.selectedPath!.path)")
-        .navigationSubtitle(viewModel.selectedPath == nil ? " " : "\(viewModel.parameters.count) variables")
+        .navigationSubtitle(viewModel.selectedPath == nil ? " " : "\(viewModel.variables.count) variables")
         .onDisappear {
             viewModel.cancelFetch()
         }
@@ -220,12 +213,7 @@ struct ParameterStoreListView: View {
     
     private func fetchParameters(for path: ParameterStorePath) {
         viewModel.searchText = ""
-        viewModel.fetchParameters(for: path) { success, errorMessage in
-            if !success {
-                error = errorMessage
-                showErrorAlert = true
-            }
-        }
+        viewModel.fetchVariables(for: path)
     }
     
     private func updateHeaderHeight(to newHeaderHeight: CGFloat? = nil) {

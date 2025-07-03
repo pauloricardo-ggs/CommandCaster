@@ -6,43 +6,53 @@
 //
 
 import Foundation
-import SwiftData
-import SwiftUICore
 
+@MainActor
 class ParameterStoreDetailViewModel: ObservableObject {
     
-    private let dataSource: DataSource
+    private let dataSource = DataSource.shared
+    private let errorContext = ErrorContext.shared
     
     @Published var value: String = ""
     @Published var loading = false
     
-    var parameter: ParameterStoreVariable
+    var variable: ParameterStoreVariable
     
-    init(dataSource: DataSource, parameter: ParameterStoreVariable) {
-        self.dataSource = dataSource
-        self.parameter = parameter
+    var isValid: Bool {
+        return !value.isEmpty
+    }
+    
+    init(variable: ParameterStoreVariable) {
+        self.variable = variable
         loadData()
     }
     
     func loadData() {
-        value = parameter.value
+        value = variable.value
     }
     
-    func updateValue() async -> (success: Bool, errorMessage: String) {
-        if !isValid() {
-            return (false, "")
+    func updateVariableValue() async {
+        loading = true
+        defer { loading = false }
+        
+        guard isValid else { return }
+        
+        do {
+            let newVersion = try await dataSource.updateParameterStoreVariableValue(variable, to: value)
+            variable.version = String(newVersion)
+        } catch {
+            errorContext.set(.failedToUpdateVariable)
         }
-                
-        let newVersion = await dataSource.updateParameterStoreVariableValue(parameter, to: value)
-        parameter.version = String(newVersion)
-        return (true, "")
     }
     
-    func deleteParameter() async {
-        await dataSource.deleteParameterStoreVariable(withPath: parameter.path)
-    }
-    
-    func isValid() -> Bool {
-        return !value.isEmpty
+    func deleteVariable() async {
+        loading = true
+        defer { loading = false }
+        
+        do {
+            try await dataSource.deleteParameterStoreVariable(withPath: variable.path)
+        } catch {
+            errorContext.set(.failedToDeleteVariable)
+        }
     }
 }

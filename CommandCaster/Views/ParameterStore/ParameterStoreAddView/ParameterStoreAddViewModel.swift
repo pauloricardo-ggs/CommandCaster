@@ -13,7 +13,8 @@ import AWSSSM
 @MainActor
 class ParameterStoreAddViewModel: ObservableObject {
 
-    private let dataSource: DataSource
+    private let dataSource = DataSource.shared
+    private let errorContext = ErrorContext.shared
     
     @Published var paths: [ParameterStorePath]
     @Published var selectedPath: ParameterStorePath?
@@ -24,38 +25,37 @@ class ParameterStoreAddViewModel: ObservableObject {
     private var initialSelectedPath: ParameterStorePath?
     private var parameters: [ParameterStoreVariable]?
     
-    init(dataSource: DataSource, paths: [ParameterStorePath], selectedPath: ParameterStorePath?, parameters: [ParameterStoreVariable]?) {
-        self.dataSource = dataSource
+    init(paths: [ParameterStorePath], selectedPath: ParameterStorePath?, parameters: [ParameterStoreVariable]?) {
         self.paths = paths
         self.selectedPath = selectedPath
         self.parameters = parameters
         self.initialSelectedPath = selectedPath
     }
     
-    func addAll(completion: @escaping (Bool, String) -> Void) async {
+    func addAll() async {
         guard let selectedPath = selectedPath else {
-            completion(false, "No path selected.")
+            errorContext.set(.noPathSelected)
             return
         }
 
-        let filtered = variables.filter { !$0.name.isEmpty && !$0.value.isEmpty }
+        let filteredVariables = variables.filter { !$0.name.isEmpty && !$0.value.isEmpty }
 
-        guard !filtered.isEmpty else {
-            completion(false, "Please enter at least one valid variable.")
+        if filteredVariables.isEmpty {
+            errorContext.set(.noValidVariable)
             return
         }
 
-        let names = filtered.map { $0.name }
+        let names = filteredVariables.map { $0.name }
         let duplicates = Set(names.filter { name in names.filter { $0 == name }.count > 1 })
 
         if !duplicates.isEmpty {
-            completion(false, "Duplicate variable names are not allowed.")
+            errorContext.set(.duplicatedVariable)
             return
         }
 
         var errorMessages: [(name: String, message: String)] = []
 
-        for variable in filtered {
+        for variable in filteredVariables {
             do {
                 try await dataSource.addParameterStoreVariable(with: variable.name, to: selectedPath.path, and: variable.value)
             } catch _ as ParameterAlreadyExists {
@@ -66,9 +66,7 @@ class ParameterStoreAddViewModel: ObservableObject {
             }
         }
 
-        if errorMessages.isEmpty {
-            completion(true, "")
-        } else {
+        if !errorMessages.isEmpty {
             let grouped = Dictionary(grouping: errorMessages, by: { $0.message })
             let message = grouped.map { (message, entries) in
                 let names = entries.map { $0.name }.joined(separator: "\n")
@@ -77,7 +75,7 @@ class ParameterStoreAddViewModel: ObservableObject {
 
             let failedNames = Set(errorMessages.map { $0.name })
             variables = variables.filter { failedNames.contains($0.name) }
-            completion(false, "Some variables could not be added:\n\n\(message)")
+            errorContext.set(.withMessage("Some variables could not be added:\n\n\(message)"))
         }
     }
     

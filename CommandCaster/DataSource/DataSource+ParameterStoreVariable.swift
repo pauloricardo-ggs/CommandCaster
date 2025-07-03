@@ -12,11 +12,7 @@ extension DataSource {
     
     func fetchParameterStoreVariables(for path: String, nextToken: String? = nil) async throws -> (variables: [ParameterStoreVariable], nextToken: String?) {
         let client = try await SSMClient()
-        let input = GetParametersByPathInput(
-            nextToken: nextToken,
-            path: path,
-            withDecryption: true
-        )
+        let input = GetParametersByPathInput(nextToken: nextToken, path: path, withDecryption: true)
         let result = try await client.getParametersByPath(input: input)
         let mapped = result.parameters?.compactMap { ParameterStoreVariable.from(ssmParameter: $0) } ?? []
         return (mapped, result.nextToken)
@@ -24,43 +20,20 @@ extension DataSource {
     
     func addParameterStoreVariable(with name: String, to path: String, and value: String) async throws {
         let client = try await SSMClient()
-        
-        let input = PutParameterInput(
-            name: path + name,
-            overwrite: false,
-            type: .string,
-            value: value
-        )
-        
+        let input = PutParameterInput(name: path + name, overwrite: false, type: .string, value: value)
         _ = try await client.putParameter(input: input)
     }
     
-    func updateParameterStoreVariableValue(_ parameter: ParameterStoreVariable, to newValue: String) async -> Int {
-        do {
-            let client = try await SSMClient()
-            
-            let input = PutParameterInput(
-                name: parameter.path,
-                overwrite: true,
-                value: newValue
-            )
-            
-            let result = try await client.putParameter(input: input)
-            return result.version
-        } catch {
-            fatalError("Error updating parameter store variable: \(error)")
-        }
+    func updateParameterStoreVariableValue(_ parameter: ParameterStoreVariable, to newValue: String) async throws -> Int {
+        let client = try await SSMClient()
+        let input = PutParameterInput(name: parameter.path, overwrite: true, value: newValue)
+        let result = try await client.putParameter(input: input)
+        return result.version
     }
     
-    func deleteParameterStoreVariable(withPath path: String) async {
-        do {
-            let client = try await SSMClient()
-            
-            let input = DeleteParameterInput(name: path)
-            
-            _ = try await client.deleteParameter(input: input)
-        } catch {
-            fatalError("Error deleting parameter store variable: \(error)")
-        }
+    func deleteParameterStoreVariable(withPath path: String) async throws {
+        let client = try await SSMClient()
+        let input = DeleteParameterInput(name: path)
+        _ = try await client.deleteParameter(input: input)
     }
 }

@@ -15,11 +15,9 @@ struct ParameterStorePathAddView: View {
     @ObservedObject var viewModel: ParameterStorePathAddViewModel
     
     @State var showCancelAlert = false
-    @State var showErrorAlert = false
-    @State var error = ""
     
     init(paths: [ParameterStorePath]) {
-        _viewModel = ObservedObject(initialValue: ParameterStorePathAddViewModel(dataSource: .shared, paths: paths))
+        _viewModel = ObservedObject(initialValue: ParameterStorePathAddViewModel(paths: paths))
     }
     
     var body: some View {
@@ -27,11 +25,6 @@ struct ParameterStorePathAddView: View {
             DataSection.padding()
             Divider()
             Footer.padding()
-        }
-        .alert("Error", isPresented: $showErrorAlert) {
-            Button("Ok", role: .cancel) {}
-        } message: {
-            Text(error)
         }
     }
     
@@ -105,15 +98,12 @@ struct ParameterStorePathAddView: View {
     
     private func addPushed() async {
         viewModel.loading = true
-        let (success, error) = await viewModel.add()
-        if success {
-            dismiss()
-            return
-        }
+        defer { viewModel.loading = false }
         
-        self.error = error
-        showErrorAlert = true
-        viewModel.loading = false
+        await viewModel.add()
+        if !ErrorContext.shared.hasError {
+            dismiss()
+        }
     }
 }
 

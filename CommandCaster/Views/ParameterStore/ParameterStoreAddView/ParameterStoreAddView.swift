@@ -15,13 +15,11 @@ struct ParameterStoreAddView: View {
     @StateObject var viewModel: ParameterStoreAddViewModel
     
     @State var showCancelAlert = false
-    @State var showErrorAlert = false
-    @State var error = ""
     
     var onAdd: () -> Void
     
     init(paths: [ParameterStorePath], selectedPath: ParameterStorePath?, parameters: [ParameterStoreVariable]?, onAdd: @escaping () -> Void) {
-        _viewModel = StateObject(wrappedValue: ParameterStoreAddViewModel(dataSource: .shared, paths: paths, selectedPath: selectedPath, parameters: parameters))
+        _viewModel = StateObject(wrappedValue: ParameterStoreAddViewModel(paths: paths, selectedPath: selectedPath, parameters: parameters))
         self.onAdd = onAdd
     }
     
@@ -30,11 +28,6 @@ struct ParameterStoreAddView: View {
             DataSection.padding()
             Divider()
             Footer.padding()
-        }
-        .alert("Error", isPresented: $showErrorAlert) {
-            Button("Ok", role: .cancel) {}
-        } message: {
-            Text(error)
         }
     }
     
@@ -142,15 +135,9 @@ struct ParameterStoreAddView: View {
         viewModel.loading = true
         defer { viewModel.loading = false }
         
-        await viewModel.addAll { success, errorMessage in
+        await viewModel.addAll()
+        if !ErrorContext.shared.hasError {
             onAdd()
-            
-            if !success {
-                error = errorMessage
-                showErrorAlert = true
-                return
-            }
-            
             dismiss()
         }
     }

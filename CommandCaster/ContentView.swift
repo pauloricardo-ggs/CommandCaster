@@ -40,12 +40,7 @@ struct Sidebar: View {
     private var groupedItems: [String: [SidebarItem]] = [
         "Parameter Store": [
             SidebarItem(name: "Parameter Store", icon: "lock.icloud", listView: ParameterStoreListView()),
-        ],
-//        "Project Management": [
-//            SidebarItem(name: "Projects", icon: "folder", listView: ProjectsListView()),
-//            SidebarItem(name: "Connections", icon: "network", listView: ConnectionsListView()),
-//            SidebarItem(name: "Platforms", icon: "server.rack", listView: PlatformsListView())
-//        ]
+        ]
     ]
     
     var body: some View {

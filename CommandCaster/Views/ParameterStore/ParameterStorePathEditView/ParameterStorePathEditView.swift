@@ -15,11 +15,9 @@ struct ParameterStorePathEditView: View {
     @ObservedObject var viewModel: ParameterStorePathEditViewModel
     
     @State var showCancelAlert = false
-    @State var showErrorAlert = false
-    @State var error = ""
     
     init(selectedPath: ParameterStorePath, paths: [ParameterStorePath]) {
-        _viewModel = ObservedObject(initialValue: ParameterStorePathEditViewModel(dataSource: .shared, selectedPath: selectedPath, paths: paths))
+        _viewModel = ObservedObject(initialValue: ParameterStorePathEditViewModel(selectedPath: selectedPath, paths: paths))
     }
     
     var body: some View {
@@ -27,11 +25,6 @@ struct ParameterStorePathEditView: View {
             DataSection.padding()
             Divider()
             Footer.padding()
-        }
-        .alert("Error", isPresented: $showErrorAlert) {
-            Button("Ok", role: .cancel) {}
-        } message: {
-            Text(error)
         }
     }
     
@@ -102,14 +95,10 @@ struct ParameterStorePathEditView: View {
     }
     
     private func savePushed() {
-        let (success, error) = viewModel.save()
-        if !success {
-            self.error = error
-            showErrorAlert = true
-            return
+        viewModel.save()
+        if !ErrorContext.shared.hasError {
+            dismiss()
         }
-        
-        dismiss()
     }
 }
 

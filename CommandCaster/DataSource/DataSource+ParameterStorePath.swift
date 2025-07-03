@@ -10,22 +10,18 @@ import Foundation
 
 extension DataSource {
     
-    func fetchParameterStorePaths() -> [ParameterStorePath] {
-        do {
-            let descriptor = FetchDescriptor<ParameterStorePath>()
-            return try modelContext.fetch(descriptor)
-        } catch {
-            fatalError(error.localizedDescription)
-        }
+    func fetchParameterStorePaths() throws -> [ParameterStorePath] {
+        let descriptor = FetchDescriptor<ParameterStorePath>()
+        return try modelContext.fetch(descriptor)
     }
     
-    func add(_ parameterStorePath: ParameterStorePath) {
+    func add(_ parameterStorePath: ParameterStorePath) throws {
         modelContext.insert(parameterStorePath)
-        save()
+        try save()
     }
     
-    func delete(_ parameterStorePath: ParameterStorePath) {
+    func delete(_ parameterStorePath: ParameterStorePath) throws {
         modelContext.delete(parameterStorePath)
-        save()
+        try save()
     }
 }

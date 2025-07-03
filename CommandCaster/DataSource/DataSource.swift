@@ -14,37 +14,24 @@ final class DataSource {
     let modelContext: ModelContext
     
     @MainActor
-    static let shared = DataSource()
+    static var shared = DataSource()
     
     @MainActor
     private init() {
         do {
             self.modelContainer = try ModelContainer(
-                for: Compose.self,
-                Connection.self,
-                Database.self,
-                Platform.self,
-                Project.self,
-                Service.self,
-                Variable.self,
-                ParameterStorePath.self,
+                for: ParameterStorePath.self,
                 configurations: ModelConfiguration(
                     isStoredInMemoryOnly: isPreview
                 )
             )
             self.modelContext = modelContainer.mainContext
         } catch {
-            fatalError("Failed to load model container: \(error.localizedDescription)")
+            fatalError("Unable to initialize CoreData stack: \(error)")
         }
     }
     
-    func save() {
-        do {
-            try modelContext.save()
-        } catch {
-            fatalError(error.localizedDescription)
-        }
+    func save() throws {
+        try modelContext.save()
     }
 }
-
-

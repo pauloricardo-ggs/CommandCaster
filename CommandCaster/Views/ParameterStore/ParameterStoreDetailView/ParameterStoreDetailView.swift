@@ -16,12 +16,10 @@ struct ParameterStoreDetailView: View {
     @State var editMode = false
     @State var showingConfirmationDialog = false
     @State var showPassword = false
-    @State var error = ""
-    @State var showErrorAlert = false
     private let postDeleteAction: (() -> Void)
     
-    init(for parameter: ParameterStoreVariable, postDeleteAction: @escaping () -> Void) {
-        _viewModel = ObservedObject(wrappedValue: ParameterStoreDetailViewModel(dataSource: .shared, parameter: parameter))
+    init(for variable: ParameterStoreVariable, postDeleteAction: @escaping () -> Void) {
+        _viewModel = ObservedObject(wrappedValue: ParameterStoreDetailViewModel(variable: variable))
         self.postDeleteAction = postDeleteAction
     }
     
@@ -29,11 +27,6 @@ struct ParameterStoreDetailView: View {
         ScrollView {
             DataSourceSection()
                 .padding()
-        }
-        .alert("Error", isPresented: $showErrorAlert) {
-            Button("Ok", role: .cancel) {}
-        } message: {
-            Text(error)
         }
         .toolbar {
             if editMode {
@@ -43,9 +36,7 @@ struct ParameterStoreDetailView: View {
             }
         }
         .toolbar(removing: .title)
-        .onChange(of: viewModel.parameter) {
-            editMode = false
-        }
+        .onChange(of: viewModel.variable) { editMode = false }
     }
     
     @ToolbarContentBuilder
@@ -87,7 +78,7 @@ struct ParameterStoreDetailView: View {
                 }
             }) {
                 Text("Save")
-                    .foregroundColor(viewModel.isValid() ? .blue : nil)
+                    .foregroundColor(viewModel.isValid ? .blue : nil)
             }
             .padding(.trailing, 8)
             .buttonStyle(.bordered)
@@ -100,10 +91,10 @@ struct ParameterStoreDetailView: View {
         VStack(spacing: 0) {
             GroupBox {
                 VStack(alignment: .leading) {
-                    Text(viewModel.parameter.name)
+                    Text(viewModel.variable.name)
                         .font(.title)
                     
-                    Text("Last modified \(viewModel.parameter.lastModifiedDate)")
+                    Text("Last modified \(viewModel.variable.lastModifiedDate)")
                         .font(.caption)
                         .foregroundStyle(.gray)
                     CustomDivider
@@ -119,23 +110,23 @@ struct ParameterStoreDetailView: View {
                 VStack(alignment: .leading) {
                     HStack {
                         Text("Path").padding(.trailing, 8)
-                        Text(viewModel.parameter.path).foregroundStyle(.gray)
+                        Text(viewModel.variable.path).foregroundStyle(.gray)
                     }
                     CustomDivider.padding(.vertical, 10)
                     HStack {
                         Text("ARN").padding(.trailing, 8)
-                        Text(viewModel.parameter.arn).foregroundStyle(.gray)
+                        Text(viewModel.variable.arn).foregroundStyle(.gray)
                     }
                     CustomDivider.padding(.vertical, 10)
                     HStack {
                         Text("Version").padding(.trailing, 8)
-                        Text(viewModel.parameter.version).foregroundStyle(.gray)
+                        Text(viewModel.variable.version).foregroundStyle(.gray)
                         Spacer()
                         Text("Type").padding(.trailing, 8)
-                        Text(viewModel.parameter.type).foregroundStyle(.gray)
+                        Text(viewModel.variable.type).foregroundStyle(.gray)
                         Spacer()
                         Text("Data Type").padding(.trailing, 8)
-                        Text(viewModel.parameter.dataType).foregroundStyle(.gray)
+                        Text(viewModel.variable.dataType).foregroundStyle(.gray)
                         
                     }
                 }
@@ -164,27 +155,18 @@ struct ParameterStoreDetailView: View {
     }
     
     private func cancelEditPushed() {
-        viewModel.loading = true
         viewModel.loadData()
         editMode = false
-        viewModel.loading = false
     }
     
     private func savePushed() async {
-        viewModel.loading = true
         editMode = false
-        let (success, error) = await viewModel.updateValue()
-        if success { return }
-        self.error = error
-        showErrorAlert = true
-        viewModel.loading = false
+        await viewModel.updateVariableValue()
     }
     
     private func deletePushed() async {
-        viewModel.loading = true
-        await viewModel.deleteParameter()
+        await viewModel.deleteVariable()
         postDeleteAction()
-        viewModel.loading = false
         editMode = false
         dismiss()
     }
