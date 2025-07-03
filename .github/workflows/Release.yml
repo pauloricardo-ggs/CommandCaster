@@ -1,0 +1,89 @@
+name: Build, Sign, Notarize and Release macOS App
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**/*.xcodeproj/project.pbxproj'
+
+jobs:
+  release:
+    runs-on: macos-15
+    env:
+      APP_NAME: CommandCaster
+      SCHEME: CommandCaster
+      DMG_NAME: CommandCasterInstaller.dmg
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Extract MARKETING_VERSION directly from project file
+        id: version
+        run: |
+          VERSION=$(grep -m1 'MARKETING_VERSION = ' CommandCaster.xcodeproj/project.pbxproj | awk '{ print $3 }' | tr -d ';')
+          echo "Detected MARKETING_VERSION: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check if release exists
+        id: check_release
+        run: |
+          if gh release view "v${{ steps.version.outputs.version }}" &> /dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and archive app
+        if: steps.check_release.outputs.exists == 'false'
+        run: |
+          xcodebuild clean archive \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -archivePath build/$APP_NAME.xcarchive \
+            -destination 'generic/platform=macOS' \
+            CODE_SIGN_IDENTITY="${{ secrets.SIGNING_IDENTITY }}" \
+            OTHER_CODE_SIGN_FLAGS="--deep"
+
+      - name: Export signed app
+        if: steps.check_release.outputs.exists == 'false'
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath build/$APP_NAME.xcarchive \
+            -exportPath build/export \
+            -exportOptionsPlist ExportOptions.plist
+
+      - name: Notarize app
+        if: steps.check_release.outputs.exists == 'false'
+        run: |
+          xcrun notarytool submit build/export/$APP_NAME.app \
+            --apple-id "${{ secrets.AC_USERNAME }}" \
+            --password "${{ secrets.AC_PASSWORD }}" \
+            --team-id "${{ secrets.AC_TEAM_ID }}" \
+            --wait
+
+      - name: Staple app
+        if: steps.check_release.outputs.exists == 'false'
+        run: |
+          xcrun stapler staple build/export/$APP_NAME.app
+
+      - name: Create DMG
+        if: steps.check_release.outputs.exists == 'false'
+        run: |
+          hdiutil create -volname "$APP_NAME" -srcfolder build/export/$APP_NAME.app -ov -format UDZO "$DMG_NAME"
+
+      - name: Staple DMG
+        if: steps.check_release.outputs.exists == 'false'
+        run: |
+          xcrun stapler staple "$DMG_NAME"
+
+      - name: Create GitHub Release and Upload DMG
+        if: steps.check_release.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
+          files: ${{ env.DMG_NAME }}
